@@ -1,58 +1,75 @@
 #Test Branch
 
-
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 from PIL import Image
 import pathlib
-linklist = ['https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2668836:1215000:12000','https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2648836:1235000:12000']
+import time
+from pandas import *
 
-url = linklist[0]
-url = "https://www.google.com"
+# URL-List
 
-driver = webdriver.Chrome()
-driver.get(url)
-driver.save_screenshot("image.png")
+## URL-Dictionary mit Link-gemeinde-prefix value/keys
+linklist = [
+    'https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2668836:1215000:12000',
+    'https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2665493:1214392:12000'
+]
 
-driver.save_screenshot("C:\TestTemp\image.png")
-dir = "C:\TestTemp\image2.png"
-driver.save_screenshot(dir)
-pathdir = pathlib.Path(dir)
-driver.save_screenshot(pathdir)
+url_dir = {}
+xls = ExcelFile(r'C:\Users\handb\Desktop\Screenshot\URLListe.xls')
+df = xls.parse(xls.sheet_names[0])
+url_dict = df.to_dict('records')
 
-image = Image.open("image.png")
-image.show
 
-i=0
-def SC(url, dir, prefix,i):
+webdriverdir = r'C:\Users\handb\Desktop\Screenshot\chromedriver.exe'
+dir = 'C:\\Users\\handb\\Desktop\\Screenshot\\images'
+
+#Function
+
+def URLSCREENER(linkdictionary, dir, webdriverdir):
+
+    # WebDriver
+            # webbrowser im hintergrund oeffnen ?!
     options = webdriver.ChromeOptions()
     options.add_argument("start-maximized")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
-    driver = webdriver.Chrome(options=options, executable_path=r'C:\Users\Andi SamLap\Downloads\chromedriver_win32\chromedriver.exe')
+    driver = webdriver.Chrome(options=options, executable_path=webdriverdir)
+    # driver.manage().timouts().implicitlyWait(5, TimeUnit.SECONDS)
 
-    driver.get(url)
-    driver.set_page_load_timeout(10)
+    #Link and parameters from dictionary
+            # fortschrittsbalken, links to creat etz.
 
-    filedir = dir
-    filename = prefix+str(i)+'.png'
-    filecomb = dir+filename
-    print(filedir,filename,filecomb)
+    for e in linkdictionary:
+        url= e.get("URL")
+        gem= e.get("GEM")
+        prefix= e.get("PREFIX")
 
-    driver.save_screenshot(filecomb)
-    #image = Image.open("image.png")
-    #image.show()
+        file= str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem)+".png")
+
+        driver.get(url)
+        # driver.set_page_load_timeout(10)
+        time.sleep(8)
+
+        driver.save_screenshot(file)
+
+        #crop
+                #cropsize anpassen --> experience nachschauen wie gross printscreens eig. sind..
+        element= driver.find_element_by_id("mapContainer");
+        location = element.location
+        size = element.size
+        print(element,location,size)
+
+        x = location['x'];
+        y = location['y'];
+        width = location['x'] + size['width'];
+        height = location['y'] + size['height'];
+        im = Image.open(file)
+        im = im.crop((int(x), int(y), int(width), int(height)))
+        cropfile = str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem)+"_croped.png")
+        im.save(cropfile)
     driver.close()
+    print("finished")
 
-testdir_o ='C:\TestTemp'
-testdir = pathlib.Path(testdir_o)
-testprefix = "\\test"
 
-filedir = testdir
-filename = testprefix+str(0)+'.png'
-ff = filedir.joinpath(filename)
-
-i=0
-for link in linklist:
-    SC(link,testdir_o,testprefix,i)
-    print(link,testdir,testprefix)
-    i+=1
+URLSCREENER(url_dict,dir, webdriverdir)
