@@ -10,14 +10,9 @@ from pandas import *
 # URL-List
 
 ## URL-Dictionary mit Link-gemeinde-prefix value/keys
-linklist = [
-    'https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2668836:1215000:12000',
-    'https://www.geo.lu.ch/map/grundbuchplan?FOCUS=2665493:1214392:12000'
-]
-
-url_dir = {}
-xls = ExcelFile(r'C:\Users\handb\Desktop\Screenshot\URLListe.xls')
-df = xls.parse(xls.sheet_names[0])
+url_dict = {}
+xlsx = ExcelFile(r'C:\Users\handb\Desktop\URL\URL_LIST.xlsx')
+df = xlsx.parse(xlsx.sheet_names[0])
 url_dict = df.to_dict('records')
 
 
@@ -27,6 +22,13 @@ dir = 'C:\\Users\\handb\\Desktop\\Screenshot\\images'
 #Function
 
 def URLSCREENER(linkdictionary, dir, webdriverdir):
+
+    # Get list infos
+    i = 0
+    for e in linkdictionary:
+        i+=1
+    print("Links to process: {}".format(i))
+    list_count = i
 
     # WebDriver
             # webbrowser im hintergrund oeffnen ?!
@@ -38,14 +40,14 @@ def URLSCREENER(linkdictionary, dir, webdriverdir):
     # driver.manage().timouts().implicitlyWait(5, TimeUnit.SECONDS)
 
     #Link and parameters from dictionary
-            # fortschrittsbalken, links to creat etz.
-
-    for e in linkdictionary:
+    i=0
+    for e in linkdictionary[:2]:
         url= e.get("URL")
-        gem= e.get("GEM")
-        prefix= e.get("PREFIX")
+        gem= e.get("Gemeinde")
+        prefix= e.get("Produkt")
+        gem_kuerzel = e.get("Kürzel")
 
-        file= str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem)+".png")
+        file= str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem_kuerzel)+".png")
 
         driver.get(url)
         # driver.set_page_load_timeout(10)
@@ -66,10 +68,19 @@ def URLSCREENER(linkdictionary, dir, webdriverdir):
         height = location['y'] + size['height'];
         im = Image.open(file)
         im = im.crop((int(x), int(y), int(width), int(height)))
-        cropfile = str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem)+"_croped.png")
+        cropfile = str(str(dir)+str("\\")+str(prefix)+str("_")+str(gem_kuerzel)+"_croped.png")
         im.save(cropfile)
-    driver.close()
-    print("finished")
+        i+=1
+        sys.stdout.write("\rProcessed: %i of %i" % (i,list_count))
+        driver.close()
+    sys.stdout.flush()
+    print("Finished")
 
 
 URLSCREENER(url_dict,dir, webdriverdir)
+
+i=0
+for i in range(100):
+    i+=1
+    sys.stdout.write("\rProcess: %i" %i)
+    sys.stdout.flush()
